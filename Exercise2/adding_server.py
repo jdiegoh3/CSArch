@@ -2,10 +2,20 @@ import socket
 import multiprocessing as mp
 
 
-def message_handler(conn):
+def message_handler(conn, address):
     import sys
-    import Exercise2.lib.protocol_utils as protocol_utils
-    data = protocol_utils.MessageHandler(conn.recv(1024)).message_loads()
+    import lib.protocol_utils as protocol_utils
+    import time
+    import datetime
+
+    actual_time = datetime.datetime.utcnow().isoformat()
+    log_file = open("adding_server_log.csv", "+a")
+    time.sleep(20)
+    raw_data = conn.recv(1024)
+
+    log_file.write("{},{},{},{}".format(actual_time, address[0], address[1], raw_data))
+
+    data = protocol_utils.MessageHandler(raw_data).message_loads()
     if data and data[0] == "+":
         try:
             message = protocol_utils.MessageResponseBuilder(False, str(float(data[1]) + float(data[2])))
@@ -14,6 +24,8 @@ def message_handler(conn):
     else:
         message = protocol_utils.MessageResponseBuilder(True, "Invalid operation")
     try:
+        log_file.write(",{}\n".format(message.get_message()))
+        log_file.close()
         conn.sendall(message.get_message())
         conn.close()
     except Exception:
@@ -29,6 +41,6 @@ if __name__ == "__main__":
     print("Adding server running ...")
     while True:
         conn, addr = socket_instance.accept()
-        temp_process = mp.Process(target=message_handler, args=(conn,))
+        temp_process = mp.Process(target=message_handler, args=(conn, addr))
         temp_process.start()
         temp_process.join()
