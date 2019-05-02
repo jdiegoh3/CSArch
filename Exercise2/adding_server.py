@@ -1,5 +1,7 @@
 import socket
 import multiprocessing as mp
+import threading as thread
+import sys
 
 
 def message_handler(conn, address):
@@ -33,14 +35,50 @@ def message_handler(conn, address):
     sys.exit()
 
 
+def identification_handler(conn, address, operation_service_addr, operation_service_port):
+    raw_data = conn.recv(1024)
+    data = raw_data.decode("utf-8")
+    if data == "Sv?":
+        message = "serv{}{}".format("+", operation_service_port)
+        conn.sendall(message.encode())
+    else:
+        conn.send("400".encode())
+    conn.close()
+    sys.exit()
+
+
+def thread_operation(socket_o):
+    print("Adding server operation service running ...")
+    while True:
+        conn, addr = socket_o.accept()
+        temp_process = mp.Process(target=message_handler, args=(conn, addr))
+        temp_process.start()
+        temp_process.join()
+
+
+def thread_identification(operation_service_addr, operation_service_port):
+    socket_i = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_i.bind(('', 8000))
+    socket_i.listen(10)
+
+    print("Adding server identification service running ...")
+    while True:
+        conn, addr = socket_i.accept()
+        temp_process = mp.Process(target=identification_handler, args=(conn, addr, operation_service_addr, operation_service_port))
+        temp_process.start()
+        temp_process.join()
+
+
 if __name__ == "__main__":
     socket_instance = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket_instance.bind(('', 9999))
     socket_instance.listen(10)
 
-    print("Adding server running ...")
-    while True:
-        conn, addr = socket_instance.accept()
-        temp_process = mp.Process(target=message_handler, args=(conn, addr))
-        temp_process.start()
-        temp_process.join()
+    t_operation = thread.Thread(target=thread_operation, args=(socket_instance,))
+
+    sockname = socket_instance.getsockname()
+
+    t_identification = thread.Thread(target=thread_identification, args=(sockname[0], sockname[1]))
+
+    t_operation.start()
+    t_identification.start()
