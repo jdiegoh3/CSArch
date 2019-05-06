@@ -10,9 +10,10 @@ def message_handler(conn, address):
     import time
     import datetime
 
+    print("New connection from", address)
     actual_time = datetime.datetime.utcnow()
     log_file = open("adding_server_log.csv", "+a")
-    time.sleep(60)
+    time.sleep(50)
     raw_data = conn.recv(1024)
 
     log_file.write("{},{},{},{},{}".format(actual_time.isoformat(), time.mktime(actual_time.timetuple()), address[0], address[1], raw_data))
