@@ -10,12 +10,12 @@ def message_handler(conn, address):
     import time
     import datetime
 
-    actual_time = datetime.datetime.utcnow().isoformat()
+    actual_time = datetime.datetime.utcnow()
     log_file = open("adding_server_log.csv", "+a")
-    time.sleep(20)
+    time.sleep(60)
     raw_data = conn.recv(1024)
 
-    log_file.write("{},{},{},{}".format(actual_time, address[0], address[1], raw_data))
+    log_file.write("{},{},{},{},{}".format(actual_time.isoformat(), time.mktime(actual_time.timetuple()), address[0], address[1], raw_data))
 
     data = protocol_utils.MessageHandler(raw_data).message_loads()
     if data and data[0] == "+":
@@ -39,7 +39,7 @@ def identification_handler(conn, address, operation_service_addr, operation_serv
     raw_data = conn.recv(1024)
     data = raw_data.decode("utf-8")
     if data == "Sv?":
-        message = "serv{}{}".format("+", operation_service_port)
+        message = "serv|{}|{}".format("+", operation_service_port)
         conn.sendall(message.encode())
     else:
         conn.send("400".encode())
