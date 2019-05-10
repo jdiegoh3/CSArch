@@ -29,13 +29,14 @@ class ServerThread(threading.Thread):
         self.localServer.register_instance(RegisteredFunctions())
 
     def run(self):
+        print("RPC Server running..")
         self.localServer.serve_forever()
 
 def identification_handler(conn, address, operation_service_addr, operation_service_port):
     raw_data = conn.recv(1024)
     data = raw_data.decode("utf-8")
     if data == "Sv?":
-        message = "serv|{}|{}".format("+", operation_service_port)
+        message = "serv|{}|{}|add".format("+", operation_service_port)
         conn.sendall(message.encode())
     else:
         conn.send("400".encode())
