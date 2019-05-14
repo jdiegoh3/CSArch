@@ -13,7 +13,7 @@ def message_handler(conn, address):
     print("New connection from", address)
     actual_time = datetime.datetime.utcnow()
     log_file = open("adding_server_log.csv", "+a")
-    time.sleep(50)
+    time.sleep(60)
     raw_data = conn.recv(1024)
 
     log_file.write("{},{},{},{},{}".format(actual_time.isoformat(), time.mktime(actual_time.timetuple()), address[0], address[1], raw_data))
@@ -34,6 +34,7 @@ def message_handler(conn, address):
     except Exception:
         print("Connection lost")
     sys.exit()
+
 
 
 def identification_handler(conn, address, operation_service_addr, operation_service_port):
@@ -75,11 +76,16 @@ if __name__ == "__main__":
     socket_instance.bind(('', 9999))
     socket_instance.listen(10)
 
-    t_operation = thread.Thread(target=thread_operation, args=(socket_instance,))
-
     sockname = socket_instance.getsockname()
 
     t_identification = thread.Thread(target=thread_identification, args=(sockname[0], sockname[1]))
-
-    t_operation.start()
     t_identification.start()
+
+    print("Adding server operation service running ...")
+    processes = []
+    while True:
+        conn, addr = socket_instance.accept()
+        temp_process = mp.Process(target=message_handler, args=(conn, addr))
+        processes.append(temp_process)
+        temp_process.start()
+
