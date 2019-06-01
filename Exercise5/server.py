@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import pika
 import lib.protocol_utils as protocol_utils
+import datetime
+import time
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -12,6 +14,7 @@ channel.queue_declare(queue='add')
 def callback(ch, method, properties, body):
     print(" [x] Received %r" % body)
     data = protocol_utils.MessageHandler(body).message_loads()
+    # time.sleep(30)
     if data and data[0] == "+":
         try:
             response = protocol_utils.MessageResponseBuilder(False, str(float(data[1]) + float(data[2])))
@@ -25,6 +28,7 @@ def callback(ch, method, properties, body):
                      properties=pika.BasicProperties(correlation_id = \
                                                          properties.correlation_id),
                      body=str(response.get_message()))
+    response_time = datetime.datetime.utcnow()
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 
